@@ -10,12 +10,7 @@ public class BoardView : NetworkBehaviour {
 
     private SpriteRenderer[,] cells;
 
-	void Awake ()
-    {
-        
-	}
-
-    void Start()
+    public override void OnStartServer()
     {
         cells = new SpriteRenderer[BoardManager.Instance.bordSize, BoardManager.Instance.bordSize];
 

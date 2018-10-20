@@ -7,5 +7,6 @@ public class AIPlayer : NetworkBehaviour
 {
 
     public PlayerType playerType;
+    
 	
 }
