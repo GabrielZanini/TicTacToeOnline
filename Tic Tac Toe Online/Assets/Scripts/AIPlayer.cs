@@ -1,16 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class AIPlayer : MonoBehaviour {
+public class AIPlayer : NetworkBehaviour
+{
 
-	// Use this for initialization
-	void Start () {
-		
-	}
+    public PlayerType playerType;
 	
-	// Update is called once per frame
-	void Update () {
-		
-	}
 }

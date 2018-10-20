@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Networking;
 
-public class BoardManager : MonoBehaviour {
+public class BoardManager : NetworkBehaviour {
 
     public static BoardManager Instance { get; private set; }
 
@@ -17,11 +17,9 @@ public class BoardManager : MonoBehaviour {
     public PlayerType PlayerCircle;
     public PlayerType PlayerCross;
 
-    public GameObject endGameMessage;
-    public Text winnerText;
-
     private CircleOrCross _firstPlayer = CircleOrCross.Cross;
-    private BoardView _boardView;
+    public BoardView boardView;
+
 
     void Awake ()
     {
@@ -31,13 +29,13 @@ public class BoardManager : MonoBehaviour {
         }
 
         board = new CircleOrCross[bordSize, bordSize];
-        _boardView = GetComponent<BoardView>();
+        boardView = GetComponent<BoardView>();
     }
 
     void Start()
     {
         ClearBoard();
-        _boardView.UpdateBoard(board);
+        boardView.UpdateBoard(board);
     }
 	
 	void Update () {
@@ -74,25 +72,7 @@ public class BoardManager : MonoBehaviour {
         CurrentPlayer = GetOppositePlayer(CurrentPlayer);
         winner = GetFinishState(board);
 
-        if (winner != CircleOrCross.None)
-        {
-            endGameMessage.SetActive(true);
-
-            if (winner == CircleOrCross.Circle)
-            {
-                winnerText.text = "O is the Winner!";
-            }
-            else if (winner == CircleOrCross.Cross)
-            {
-                winnerText.text = "X is the Winner!";
-            }
-            else
-            {
-                winnerText.text = "It is a Draw!";
-            }
-        }
-
-        _boardView.UpdateBoard(board);
+        boardView.UpdateBoard(board);
     }
 
     public static CircleOrCross GetFinishState(CircleOrCross[,] board)
@@ -199,12 +179,11 @@ public class BoardManager : MonoBehaviour {
     public void RestartGame()
     {
         ClearBoard();
-        _boardView.UpdateBoard(board);
+        boardView.UpdateBoard(board);
 
         CurrentPlayer = _firstPlayer;
 
         winner = CircleOrCross.None;
-        endGameMessage.SetActive(false);
     }
 
     public void SetFirstPlayer(int value)

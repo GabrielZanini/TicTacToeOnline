@@ -635,7 +635,7 @@ PlayerSettings:
   facebookSdkVersion: 7.9.4
   apiCompatibilityLevel: 2
   cloudProjectId: 6c7ed8f7-2d73-431d-86ba-65f1c274f8ca
-  projectName: Tic Tac Toe
+  projectName: Tic Tac Toe Multiplayer
   organizationId: shinson7
   cloudEnabled: 0
   enableNativePlatformBackendsForNewInputSystem: 0

@@ -1,8 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class CellClickDetector : MonoBehaviour {
+public class CellClickDetector : NetworkBehaviour
+{
 
     public int line = 0;
     public int column = 0;
