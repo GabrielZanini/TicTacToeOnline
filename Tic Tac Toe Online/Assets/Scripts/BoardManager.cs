@@ -5,37 +5,35 @@ using UnityEngine.Networking;
 
 public class BoardManager : NetworkBehaviour {
 
-    public static BoardManager Instance { get; private set; }
+    public PlayerConnectionObject playerConnection;
 
     [Range(2,5)]
     public int bordSize = 3;
 
-    public CircleOrCross[,] board;
-    public CircleOrCross CurrentPlayer;
-    public CircleOrCross winner = CircleOrCross.None;
-
-    public PlayerType PlayerCircle;
-    public PlayerType PlayerCross;
-
-    private CircleOrCross _firstPlayer = CircleOrCross.Cross;
+    public int[,] board;
+    [SyncVar]
+    public int CurrentPlayer;
+    [SyncVar]
+    public int winner = (int)CircleOrCross.None;
+    
+    private int _firstPlayer = (int)CircleOrCross.Cross;
     public BoardView boardView;
 
 
     void Awake ()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-
-        board = new CircleOrCross[bordSize, bordSize];
-        boardView = GetComponent<BoardView>();
+        board = new int[bordSize, bordSize];
+        boardView = BoardView.Instance;
+        boardView.boardManager = this;
     }
 
     void Start()
     {
-        ClearBoard();
-        boardView.UpdateBoard(board);
+        if (isServer)
+        {
+            ClearBoard();
+            UpdateBoardView();
+        }
     }
 	
 	void Update () {
@@ -44,50 +42,75 @@ public class BoardManager : NetworkBehaviour {
     
     void ClearBoard()
     {
-        for (int l = 0; l < BoardManager.Instance.bordSize; l++)
+        for (int l = 0; l < bordSize; l++)
         {
-            for (int c = 0; c < BoardManager.Instance.bordSize; c++)
+            for (int c = 0; c < bordSize; c++)
             {
-                board[l, c] = CircleOrCross.None;
+                board[l, c] = (int)CircleOrCross.None;
             }
         }
     }
+    
 
-    public void MakePlay (int line, int column)
+    [Command]
+    public void CmdMakePlay(int line, int column)
     {
-        if (winner != CircleOrCross.None)
+        Debug.Log("BoardManager::CmdMakePlay");
+
+        if ((CircleOrCross)winner != CircleOrCross.None)
         {
             Debug.Log("The Game is Over!");
             return;
         }
 
-        if (board[line, column] != CircleOrCross.None)
+        if (board[line, column] != (int)CircleOrCross.None)
         {
             Debug.Log("Choose another place!!!");
             return;
         }
 
-        board[line, column] = CurrentPlayer;
+        RpcUpdateBoardData(line, column, CurrentPlayer);
 
         CurrentPlayer = GetOppositePlayer(CurrentPlayer);
         winner = GetFinishState(board);
 
+        RpcUpdateBoardView();
+    }
+
+    [ClientRpc]
+    public void RpcUpdateBoardData(int line, int column, int player)
+    {
+        Debug.Log("PlayerConnectionObject::RpcUpdateBoardData");
+        board[line, column] = player;
+    }
+
+    [ClientRpc]
+    public void RpcUpdateBoardView()
+    {
+        Debug.Log("PlayerConnectionObject::RpcUpdateBoardView");
+        UpdateBoardView();
+    }
+
+
+    public void UpdateBoardView()
+    {
         boardView.UpdateBoard(board);
     }
 
-    public static CircleOrCross GetFinishState(CircleOrCross[,] board)
+
+    public int GetFinishState(int[,] board)
     {        
         //Check lines
-        for (int l = 0; l < BoardManager.Instance.bordSize; l++)
+        for (int l = 0; l < bordSize; l++)
         {
-            CircleOrCross firstCellLine = board[l, 0];
-            for (int c = 1; c < BoardManager.Instance.bordSize; c++)
+            int firstCellLine = board[l, 0];
+            for (int c = 1; c < bordSize; c++)
             {
                 if (firstCellLine != board[l, c])
                 {
                     break;
                 }
-                else if (c == BoardManager.Instance.bordSize - 1)
+                else if (c == bordSize - 1)
                 {
                     return firstCellLine;
                 }
@@ -95,16 +118,16 @@ public class BoardManager : NetworkBehaviour {
         }
 
         //Check Columns
-        for (int c = 0; c < BoardManager.Instance.bordSize; c++)
+        for (int c = 0; c < bordSize; c++)
         {
-            CircleOrCross firstCellColumn = board[0, c];
-            for (int l = 1; c < BoardManager.Instance.bordSize; l++)
+            int firstCellColumn = board[0, c];
+            for (int l = 1; c < bordSize; l++)
             {
                 if (firstCellColumn != board[l, c])
                 {
                     break;
                 }
-                else if (l == BoardManager.Instance.bordSize - 1)
+                else if (l == bordSize - 1)
                 {
                     return firstCellColumn;
                 }
@@ -112,28 +135,28 @@ public class BoardManager : NetworkBehaviour {
         }
 
         //Check Diagoanl (Same)
-        CircleOrCross firstCellDiagonal = board[0, 0];
-        for (int lc = 1; lc < BoardManager.Instance.bordSize; lc++)
+        int firstCellDiagonal = board[0, 0];
+        for (int lc = 1; lc < bordSize; lc++)
         {
             if (firstCellDiagonal != board[lc, lc])
             {
                 break;
             }
-            else if (lc == BoardManager.Instance.bordSize - 1)
+            else if (lc == bordSize - 1)
             {
                 return firstCellDiagonal;
             }
         }
 
         //Check Diagoanl (Opposite)
-        firstCellDiagonal = board[0, BoardManager.Instance.bordSize - 1];
-        for (int lc = 1; lc < BoardManager.Instance.bordSize; lc++)
+        firstCellDiagonal = board[0, bordSize - 1];
+        for (int lc = 1; lc < bordSize; lc++)
         {
-            if (firstCellDiagonal != board[lc, BoardManager.Instance.bordSize - lc - 1])
+            if (firstCellDiagonal != board[lc, bordSize - lc - 1])
             {
                 break;
             }
-            else if (lc == BoardManager.Instance.bordSize - 1)
+            else if (lc == bordSize - 1)
             {
                 return firstCellDiagonal;
             }
@@ -141,114 +164,75 @@ public class BoardManager : NetworkBehaviour {
 
         //Check for Draw
         bool isDraw = true;
-        for (int l = 0; l < BoardManager.Instance.bordSize; l++)
+        for (int l = 0; l < bordSize; l++)
         {
             if (!isDraw)
             {
                 break;
             }
-            for (int c = 0; c < BoardManager.Instance.bordSize; c++)
+            for (int c = 0; c < bordSize; c++)
             {
-                if (board[l, c] == CircleOrCross.None)
+                if (board[l, c] == (int)CircleOrCross.None)
                 {
                     isDraw = false;
                     break;
-                } else if (l == BoardManager.Instance.bordSize - 1 && c == BoardManager.Instance.bordSize - 1)
+                } else if (l == bordSize - 1 && c == bordSize - 1)
                 {
-                    return CircleOrCross.Draw;
+                    return (int)CircleOrCross.Draw;
                 }
             }
         }
 
 
-        return CircleOrCross.None;
+        return (int)CircleOrCross.None;
     }
     
-    public static CircleOrCross GetOppositePlayer(CircleOrCross player)
+    public int GetOppositePlayer(int player)
     {
-        if (player == CircleOrCross.Circle)
+        if (player == (int)CircleOrCross.Circle)
         {
-            return CircleOrCross.Cross;
+            return (int)CircleOrCross.Cross;
         }
         else
         {
-            return CircleOrCross.Circle;
+            return (int)CircleOrCross.Circle;
         }
     }
 
     public void RestartGame()
     {
-        ClearBoard();
-        boardView.UpdateBoard(board);
+        if (isServer)
+        {
+            ClearBoard();
+            UpdateBoardView();
 
-        CurrentPlayer = _firstPlayer;
+            CurrentPlayer = _firstPlayer;
 
-        winner = CircleOrCross.None;
+            winner = (int)CircleOrCross.None;
+        }
     }
 
     public void SetFirstPlayer(int value)
     {
         if (value == 0)
         {
-            _firstPlayer = CircleOrCross.Circle;
+            _firstPlayer = (int)CircleOrCross.Circle;
         }
         else
         {
-            _firstPlayer = CircleOrCross.Cross;
+            _firstPlayer = (int)CircleOrCross.Cross;
         }
 
         CurrentPlayer = _firstPlayer;
     }
-
-    public void SetCirclePlayerType(int value)
-    {
-        if (value == 0)
-        {
-            PlayerCircle = PlayerType.Human;
-        }
-        else
-        {
-            PlayerCircle = PlayerType.AI;
-        }
-        
-    }
-
-    public void SetCrossPlayerType(int value)
-    {
-        if (value == 0)
-        {
-            PlayerCross = PlayerType.Human;
-        }
-        else
-        {
-            PlayerCross = PlayerType.AI;
-        }
-
-    }
 }
 
-public class Point
-{
-    int x = 0;
-    int y = 0;
-
-    public Point(int x, int y)
-    {
-        this.x = x;
-        this.y = y;
-    }
-}
 
 public enum CircleOrCross
 {
-    None,
-    Circle,
-    Cross,
-    Draw
+    None = 0,
+    Circle = 1,
+    Cross = 2,
+    Draw = 3
 }
 
-public enum PlayerType
-{
-    Human,
-    AI
-}
