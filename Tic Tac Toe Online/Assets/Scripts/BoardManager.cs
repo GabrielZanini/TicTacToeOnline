@@ -22,13 +22,15 @@ public class BoardManager : NetworkBehaviour {
 
     void Awake ()
     {
-        board = new int[bordSize, bordSize];
-        boardView = BoardView.Instance;
-        boardView.boardManager = this;
+        
     }
 
     void Start()
     {
+        board = new int[bordSize, bordSize];
+        boardView = BoardView.Instance;
+        boardView.boardManager = this;
+
         if (isServer)
         {
             ClearBoard();
@@ -199,17 +201,15 @@ public class BoardManager : NetworkBehaviour {
         }
     }
 
-    public void RestartGame()
+    [Command]
+    public void CmdRestartGame()
     {
-        if (isServer)
-        {
-            ClearBoard();
-            UpdateBoardView();
+        ClearBoard();
+        UpdateBoardView();
 
-            CurrentPlayer = _firstPlayer;
+        CurrentPlayer = _firstPlayer;
 
-            winner = (int)CircleOrCross.None;
-        }
+        winner = (int)CircleOrCross.None;
     }
 
     public void SetFirstPlayer(int value)
