@@ -8,17 +8,19 @@ public class CellClickDetector : MonoBehaviour
     public int line = 0;
     public int column = 0;
 
-    private BoardView _boardView;
-
     private void Awake()
     {
-        _boardView = GetComponentInParent<BoardView>();
+
     }
 
     void OnMouseDown()
     {
         Debug.Log("CellClickDetector::OnMouseDown");
-        _boardView.boardManager.CmdMakePlay(line, column);
+
+        if (BoardManager.Instance.CanMakePlay())
+        {
+            BoardManager.Instance.playerConnection.CmdMakePlay(line, column);
+        }
     }
 
     public void SetCoordinates(int line, int column)

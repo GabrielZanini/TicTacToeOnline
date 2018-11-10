@@ -5,6 +5,8 @@ using UnityEngine.Networking;
 
 public class BoardManager : NetworkBehaviour {
 
+    public static BoardManager Instance { get; private set; }
+
     public PlayerConnectionObject playerConnection;
 
     [Range(2,5)]
@@ -22,7 +24,14 @@ public class BoardManager : NetworkBehaviour {
 
     void Awake ()
     {
-        
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
     }
 
     void Start()
@@ -53,9 +62,13 @@ public class BoardManager : NetworkBehaviour {
         }
     }
     
+    
+    public bool CanMakePlay()
+    {
+        return CurrentPlayer == playerConnection.playerType;
+    }
 
-    [Command]
-    public void CmdMakePlay(int line, int column)
+    public void MakePlay(int line, int column)
     {
         Debug.Log("BoardManager::CmdMakePlay");
 
@@ -71,29 +84,15 @@ public class BoardManager : NetworkBehaviour {
             return;
         }
 
-        RpcUpdateBoardData(line, column, CurrentPlayer);
+        //RpcUpdateBoardData(line, column);
+        board[line, column] = CurrentPlayer;
 
         CurrentPlayer = GetOppositePlayer(CurrentPlayer);
         winner = GetFinishState(board);
 
-        RpcUpdateBoardView();
-    }
-
-    [ClientRpc]
-    public void RpcUpdateBoardData(int line, int column, int player)
-    {
-        Debug.Log("PlayerConnectionObject::RpcUpdateBoardData");
-        board[line, column] = player;
-    }
-
-    [ClientRpc]
-    public void RpcUpdateBoardView()
-    {
-        Debug.Log("PlayerConnectionObject::RpcUpdateBoardView");
         UpdateBoardView();
     }
-
-
+    
     public void UpdateBoardView()
     {
         boardView.UpdateBoard(board);
@@ -200,9 +199,8 @@ public class BoardManager : NetworkBehaviour {
             return (int)CircleOrCross.Circle;
         }
     }
-
-    [Command]
-    public void CmdRestartGame()
+    
+    public void RestartGame()
     {
         ClearBoard();
         UpdateBoardView();

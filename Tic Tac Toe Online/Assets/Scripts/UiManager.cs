@@ -6,6 +6,6 @@ public class UiManager : MonoBehaviour
 {
     public void Restart()
     {
-        BoardView.Instance.boardManager.CmdRestartGame();
+        BoardView.Instance.boardManager.playerConnection.CmdRestartGame();
     }
 }

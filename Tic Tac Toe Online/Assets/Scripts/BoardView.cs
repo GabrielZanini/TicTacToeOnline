@@ -19,6 +19,10 @@ public class BoardView : NetworkBehaviour {
         {
             Instance = this;
         }
+        else
+        {
+            Destroy(this);
+        }
     }
     
     public void Start()
